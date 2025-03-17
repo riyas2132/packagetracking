@@ -9,23 +9,36 @@
     <!-- Custom CSS -->
     <style>
         body {
-            background-color: #f8f9fa;
+            background-color: #e9f2f9;
+            font-family: 'Arial', sans-serif;
         }
         .tracking-container {
             max-width: 800px;
             margin: 50px auto;
-            padding: 20px;
+            padding: 30px;
             background-color: #ffffff;
-            border-radius: 10px;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            border-radius: 15px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
         }
         .tracking-header {
             text-align: center;
             margin-bottom: 30px;
         }
+        .tracking-header h2 {
+            color: #2c3e50;
+            font-weight: 700;
+        }
+        .tracking-header p {
+            color: #7f8c8d;
+        }
         .progress {
             height: 25px;
             margin: 30px 0;
+            border-radius: 12px;
+            overflow: hidden;
+        }
+        .progress-bar {
+            background-color: #1abc9c;
         }
         .tracking-history {
             position: relative;
@@ -38,7 +51,7 @@
             top: 0;
             height: 100%;
             width: 2px;
-            background-color: #dee2e6;
+            background-color: #bdc3c7;
         }
         .tracking-step {
             position: relative;
@@ -53,22 +66,28 @@
             width: 16px;
             height: 16px;
             border-radius: 50%;
-            background-color: #6c757d;
+            background-color: #bdc3c7;
             z-index: 1;
         }
         .tracking-step.completed:before {
-            background-color: #198754;
+            background-color: #1abc9c;
         }
         .tracking-step-content {
-            padding: 10px 15px;
-            background-color: #f1f3f5;
-            border-radius: 5px;
+            padding: 15px;
+            background-color: #f4f7f9;
+            border-radius: 10px;
+            border-left: 4px solid #1abc9c;
         }
         .customer-details, .item-details {
-            padding: 15px;
-            border: 1px solid #dee2e6;
-            border-radius: 5px;
+            padding: 20px;
+            background-color: #f4f7f9;
+            border-radius: 10px;
             margin-bottom: 20px;
+            border: 1px solid #e0e7ee;
+        }
+        .customer-details h6, .item-details h6 {
+            color: #2c3e50;
+            font-weight: 600;
         }
         .hide-section {
             display: none;
@@ -85,6 +104,29 @@
         @keyframes spin {
             0% { transform: rotate(0deg); }
             100% { transform: rotate(360deg); }
+        }
+        .btn-primary {
+            background-color: #3498db;
+            border-color: #3498db;
+            font-weight: 600;
+        }
+        .btn-primary:hover {
+            background-color: #2980b9;
+            border-color: #2980b9;
+        }
+        .badge {
+            font-size: 14px;
+            padding: 8px 12px;
+            border-radius: 12px;
+        }
+        .bg-success {
+            background-color: #1abc9c !important;
+        }
+        .bg-info {
+            background-color: #3498db !important;
+        }
+        .bg-warning {
+            background-color: #f1c40f !important;
         }
     </style>
 </head>
@@ -134,7 +176,7 @@
                                 <h6>Details</h6>
                                 <hr>
                                 <p><strong>Package:</strong> <span id="itemDescription"></span></p>
-								<p><strong>Description:</strong> <span id="itemDetailDescription"></span></p>
+                                <p><strong>Description:</strong> <span id="itemDetailDescription"></span></p>
                             </div>
                         </div>
                     </div>
@@ -151,163 +193,163 @@
     <!-- Google Sheets API -->
     <script src="https://apis.google.com/js/api.js"></script>
     <!-- Custom JavaScript -->
-<script>
-    const API_KEY = 'AIzaSyByyiuwuJBysKl2xtvl6wCw6Gz9shyDzXs';
-    const SHEET_ID = '1hFEABoSdU-bkHTvJ4Nqv0DFi9RTOM9c994H5DlhfLvw';
-    const SHEET_RANGE = 'Tracker!A:AL';
+    <script>
+        const API_KEY = 'AIzaSyByyiuwuJBysKl2xtvl6wCw6Gz9shyDzXs';
+        const SHEET_ID = '1hFEABoSdU-bkHTvJ4Nqv0DFi9RTOM9c994H5DlhfLvw';
+        const SHEET_RANGE = 'Tracker!A:AL';
 
-    document.addEventListener('DOMContentLoaded', function() {
-        const trackingInput = document.getElementById('trackingInput');
-        const trackButton = document.getElementById('trackButton');
-        const loader = document.getElementById('loader');
-        const errorMessage = document.getElementById('errorMessage');
-        const trackingResult = document.getElementById('trackingResult');
-        
-        gapi.load('client', initClient);
-
-        function initClient() {
-            gapi.client.init({
-                'apiKey': API_KEY,
-                'discoveryDocs': ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
-            }).then(() => {
-                console.log('Google Sheets API initialized');
-                // Check for tracking number in URL
-                const urlParams = new URLSearchParams(window.location.search);
-                const trackingNumber = urlParams.get('tracking');
-                if (trackingNumber) {
-                    trackingInput.value = trackingNumber;
-                    trackPackage(); // Auto-trigger search
-                }
-            }, (error) => {
-                console.error('Error initializing Google Sheets API:', error);
-            });
-        }
-
-        trackButton.addEventListener('click', trackPackage);
-        trackingInput.addEventListener('keypress', function(e) {
-            if (e.key === 'Enter') {
-                trackPackage();
-            }
-        });
-
-        async function trackPackage() {
-            const trackingNumber = trackingInput.value.trim();
-
-            if (!trackingNumber) {
-                showError('Please enter a tracking number');
-                return;
-            }
-
-            loader.classList.remove('hide-section');
-            errorMessage.classList.add('hide-section');
-            trackingResult.classList.add('hide-section');
+        document.addEventListener('DOMContentLoaded', function() {
+            const trackingInput = document.getElementById('trackingInput');
+            const trackButton = document.getElementById('trackButton');
+            const loader = document.getElementById('loader');
+            const errorMessage = document.getElementById('errorMessage');
+            const trackingResult = document.getElementById('trackingResult');
             
-            try {
-                const response = await gapi.client.sheets.spreadsheets.values.get({
-                    spreadsheetId: SHEET_ID,
-                    range: SHEET_RANGE,
+            gapi.load('client', initClient);
+
+            function initClient() {
+                gapi.client.init({
+                    'apiKey': API_KEY,
+                    'discoveryDocs': ['https://sheets.googleapis.com/$discovery/rest?version=v4'],
+                }).then(() => {
+                    console.log('Google Sheets API initialized');
+                    // Check for tracking number in URL
+                    const urlParams = new URLSearchParams(window.location.search);
+                    const trackingNumber = urlParams.get('tracking');
+                    if (trackingNumber) {
+                        trackingInput.value = trackingNumber;
+                        trackPackage(); // Auto-trigger search
+                    }
+                }, (error) => {
+                    console.error('Error initializing Google Sheets API:', error);
                 });
+            }
 
-                const data = response.result.values;
-                const trackingData = data.slice(1).find(row => row[0] === trackingNumber);
+            trackButton.addEventListener('click', trackPackage);
+            trackingInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    trackPackage();
+                }
+            });
 
-                if (!trackingData) {
-                    showError('Tracking number not found. Please check and try again.');
+            async function trackPackage() {
+                const trackingNumber = trackingInput.value.trim();
+
+                if (!trackingNumber) {
+                    showError('Please enter a tracking number');
                     return;
                 }
 
-                const trackingInfo = {
-                    status: getLastStatus(trackingData),
-                    percentComplete: parseInt(trackingData[37]),
-                    customerDetails: {
-                        name: trackingData[1],
-                        email: trackingData[2],
-                        phone: trackingData[3],
-                        address: trackingData[4],
-                    },
-                    itemDetails: {
-                        description: trackingData[5],
-                        detailDescription: trackingData[6],
-                    },
-                    trackingHistory: [
-                        { date: trackingData[8], status: trackingData[7], remarks: trackingData[9] },
-                        { date: trackingData[11], status: trackingData[10], remarks: trackingData[12] },
-                        { date: trackingData[14], status: trackingData[13], remarks: trackingData[15] },
-                        { date: trackingData[17], status: trackingData[16], remarks: trackingData[18] },
-                        { date: trackingData[20], status: trackingData[19], remarks: trackingData[21] },
-                        { date: trackingData[23], status: trackingData[22], remarks: trackingData[24] },
-                        { date: trackingData[26], status: trackingData[25], remarks: trackingData[27] },
-                        { date: trackingData[29], status: trackingData[28], remarks: trackingData[30] },
-                        { date: trackingData[32], status: trackingData[31], remarks: trackingData[33] },
-                        { date: trackingData[35], status: trackingData[34], remarks: trackingData[36] }
-                    ].filter(step => step.date),
-                };
+                loader.classList.remove('hide-section');
+                errorMessage.classList.add('hide-section');
+                trackingResult.classList.add('hide-section');
+                
+                try {
+                    const response = await gapi.client.sheets.spreadsheets.values.get({
+                        spreadsheetId: SHEET_ID,
+                        range: SHEET_RANGE,
+                    });
 
-                displayTrackingResult(trackingNumber, trackingInfo);
-            } catch (error) {
-                console.error('Error fetching data:', error);
-                showError('An error occurred while fetching tracking data.');
-            } finally {
-                loader.classList.add('hide-section');
-            }
-        }
+                    const data = response.result.values;
+                    const trackingData = data.slice(1).find(row => row[0] === trackingNumber);
 
-        function getLastStatus(trackingData) {
-            const statusColumns = [7, 10, 13, 16, 19, 22, 25, 28, 31, 34];
-            for (let i = statusColumns.length - 1; i >= 0; i--) {
-                if (trackingData[statusColumns[i]]) {
-                    return trackingData[statusColumns[i]];
+                    if (!trackingData) {
+                        showError('Tracking number not found. Please check and try again.');
+                        return;
+                    }
+
+                    const trackingInfo = {
+                        status: getLastStatus(trackingData),
+                        percentComplete: parseInt(trackingData[37]),
+                        customerDetails: {
+                            name: trackingData[1],
+                            email: trackingData[2],
+                            phone: trackingData[3],
+                            address: trackingData[4],
+                        },
+                        itemDetails: {
+                            description: trackingData[5],
+                            detailDescription: trackingData[6],
+                        },
+                        trackingHistory: [
+                            { date: trackingData[8], status: trackingData[7], remarks: trackingData[9] },
+                            { date: trackingData[11], status: trackingData[10], remarks: trackingData[12] },
+                            { date: trackingData[14], status: trackingData[13], remarks: trackingData[15] },
+                            { date: trackingData[17], status: trackingData[16], remarks: trackingData[18] },
+                            { date: trackingData[20], status: trackingData[19], remarks: trackingData[21] },
+                            { date: trackingData[23], status: trackingData[22], remarks: trackingData[24] },
+                            { date: trackingData[26], status: trackingData[25], remarks: trackingData[27] },
+                            { date: trackingData[29], status: trackingData[28], remarks: trackingData[30] },
+                            { date: trackingData[32], status: trackingData[31], remarks: trackingData[33] },
+                            { date: trackingData[35], status: trackingData[34], remarks: trackingData[36] }
+                        ].filter(step => step.date),
+                    };
+
+                    displayTrackingResult(trackingNumber, trackingInfo);
+                } catch (error) {
+                    console.error('Error fetching data:', error);
+                    showError('An error occurred while fetching tracking data.');
+                } finally {
+                    loader.classList.add('hide-section');
                 }
             }
-            return 'No Status Found';
-        }
 
-        function displayTrackingResult(trackingNumber, data) {
-            document.getElementById('displayTrackingNumber').textContent = trackingNumber;
-            const statusBadge = document.getElementById('statusBadge');
-            statusBadge.textContent = data.status;
-            statusBadge.className = 'badge';
-
-            if (data.status === 'Delivered') {
-                statusBadge.classList.add('bg-success');
-            } else if (data.status === 'In Transit') {
-                statusBadge.classList.add('bg-info');
-            } else {
-                statusBadge.classList.add('bg-warning');
+            function getLastStatus(trackingData) {
+                const statusColumns = [7, 10, 13, 16, 19, 22, 25, 28, 31, 34];
+                for (let i = statusColumns.length - 1; i >= 0; i--) {
+                    if (trackingData[statusColumns[i]]) {
+                        return trackingData[statusColumns[i]];
+                    }
+                }
+                return 'No Status Found';
             }
 
-            document.getElementById('progressBar').style.width = data.percentComplete + '%';
-            document.getElementById('percentComplete').textContent = data.percentComplete;
-            document.getElementById('customerName').textContent = data.customerDetails.name;
-            document.getElementById('customerEmail').textContent = data.customerDetails.email;
-            document.getElementById('customerPhone').textContent = data.customerDetails.phone;
-            document.getElementById('customerAddress').textContent = data.customerDetails.address;
-            document.getElementById('itemDescription').textContent = data.itemDetails.description;
-            document.getElementById('itemDetailDescription').textContent = data.itemDetails.detailDescription;
+            function displayTrackingResult(trackingNumber, data) {
+                document.getElementById('displayTrackingNumber').textContent = trackingNumber;
+                const statusBadge = document.getElementById('statusBadge');
+                statusBadge.textContent = data.status;
+                statusBadge.className = 'badge';
 
-            const trackingHistoryContainer = document.getElementById('trackingHistory');
-            trackingHistoryContainer.innerHTML = '';
-            data.trackingHistory.forEach((step) => {
-                trackingHistoryContainer.innerHTML += `
-                    <div class="tracking-step completed">
-                        <div class="tracking-step-content">
-                            <div class="d-flex justify-content-between">
-                                <strong>${step.status}</strong>
-                                <span class="text-muted">${step.date}</span>
+                if (data.status === 'Delivered') {
+                    statusBadge.classList.add('bg-success');
+                } else if (data.status === 'In Transit') {
+                    statusBadge.classList.add('bg-info');
+                } else {
+                    statusBadge.classList.add('bg-warning');
+                }
+
+                document.getElementById('progressBar').style.width = data.percentComplete + '%';
+                document.getElementById('percentComplete').textContent = data.percentComplete;
+                document.getElementById('customerName').textContent = data.customerDetails.name;
+                document.getElementById('customerEmail').textContent = data.customerDetails.email;
+                document.getElementById('customerPhone').textContent = data.customerDetails.phone;
+                document.getElementById('customerAddress').textContent = data.customerDetails.address;
+                document.getElementById('itemDescription').textContent = data.itemDetails.description;
+                document.getElementById('itemDetailDescription').textContent = data.itemDetails.detailDescription;
+
+                const trackingHistoryContainer = document.getElementById('trackingHistory');
+                trackingHistoryContainer.innerHTML = '';
+                data.trackingHistory.forEach((step) => {
+                    trackingHistoryContainer.innerHTML += `
+                        <div class="tracking-step completed">
+                            <div class="tracking-step-content">
+                                <div class="d-flex justify-content-between">
+                                    <strong>${step.status}</strong>
+                                    <span class="text-muted">${step.date}</span>
+                                </div>
+                                <div>${step.remarks}</div>
                             </div>
-                            <div>${step.remarks}</div>
-                        </div>
-                    </div>`;
-            });
+                        </div>`;
+                });
 
-            trackingResult.classList.remove('hide-section');
-        }
+                trackingResult.classList.remove('hide-section');
+            }
 
-        function showError(message) {
-            errorMessage.textContent = message;
-            errorMessage.classList.remove('hide-section');
-        }
-    });
-</script>
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.remove('hide-section');
+            }
+        });
+    </script>
 </body>
 </html>
